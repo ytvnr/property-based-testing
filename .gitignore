@@ -22,3 +22,7 @@
 # virtual machine crash logs, see http://www.java.com/en/download/help/error_hotspot.xml
 hs_err_pid*
 replay_pid*
+/.idea/
+/property-based-testing-slides/node_modules/
+/property-based-testing-src/target/
+/property-based-testing.iml
