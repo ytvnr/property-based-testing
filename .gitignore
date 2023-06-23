@@ -26,3 +26,4 @@ replay_pid*
 /property-based-testing-slides/node_modules/
 /property-based-testing-src/target/
 /property-based-testing.iml
+/property-based-testing-src/.jqwik-database

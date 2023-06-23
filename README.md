@@ -1,7 +1,5 @@
-
-[//]: # (Use https://jqwik.net/)
-
 # property-based-testing
+
 Materials to present Property-Based testing principles
 
 ## Use cases
@@ -11,6 +9,8 @@ Go in See [Java sources](./property-based-testing-src)
 ```shell
 cd ./property-based-testing-src
 ```
+
+We will use Jqwik Library that comes with a cool [User Guide](https://jqwik.net/docs/current/user-guide.html).
 
 A https://taskfile.dev/ is provided to quickly generate:
 
