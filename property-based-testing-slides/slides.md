@@ -72,6 +72,16 @@ A combinator library implements "combinators" for a functional language. It offe
 transition: fade-out
 ---
 
+# Unit-test vs Property-Based-test
+
+| **Unit tests** | **Property-based tests**  |
+|----------------|---------------------------|
+| Fixed input    | Random Input              |
+| One execution  | Many executions           |
+| Assert result  | Assert result or behavior |
+
+
+
 # Which library will we use ?
 
 For this talk, we will use [Jqwik](https://jqwik.net/) which is an alternative test engine for the JUnit 5 platform that focuses on PBT.
@@ -85,6 +95,33 @@ For Java, you can use the following:
 - ScalaCheck
 - KotlinTest
 - And a lot of others
+
+---
+transition: fade-out
+---
+
+# Creating a property
+
+You just create a method with `public`, `protected` or package-scoped visbility, and you annotate it with `@Property`.
+A property is supposed to have one or more parameters, each annotated with `@ForALl`. Those parameters will be filled by Jqwik at runtime.
+
+A property method has to:
+- either return a `boolean` that signifies success or failure for this property
+- or return nothing (`void`). In that case, you have to use assertions to check property's invariant.
+
+`@Property` has a lot of attributes that can be configured to customize your test:
+- `int tries`: the number of times jqwik tries to generate parameter values for this method. Default is `1000`.
+- `String seed`: the random seed to use for generating values. It allows to rerun a previously failing test with the exact same parameter values, which is useful to reproduce, debug and fix.
+- `GenerationMode generation`: choose the principal approach to generate values:
+  - `AUTO` uses the exhaustive generation, and tries to do all the possible combinations in the limit of `tries` attribute
+  - `RANDOMIZED`
+  - `EXHAUSTIVE` is like auto but maximum is not the number of tries but `Integer.MAX_VALUE`
+  - `DATA_DRIVEN` allows to use a custom data provider
+- More at: https://jqwik.net/docs/current/user-guide.html#optional-property-attributes
+
+<!--
+Works with any assertion library (JUnit, Hamcrest, AssertJ).
+-->
 
 ---
 transition: fade-out
@@ -186,216 +223,244 @@ Now, we also have to test a number divisible by 5 will end with "Buzz" and a num
 transition: slide-up
 ---
 
-# What is Mutation Testing?
+# Some Property-Based Testing patterns
+<!--
+https://blog.ssanj.net/posts/2016-06-26-property-based-testing-patterns.html
+-->
 
-```java
-int index = 0;
-while(...) {
-    ...;
-    index++;
-    if (index == 10) break;
-}
+## Idempotence - The more things change, the more they stay the same
+
+```mermaid
+flowchart LR
+    first["x"]
+    funcX["function(x)"]
+    second["y"]
+    funcY["function(y)"]
+    third["y"]
+    first --> funcX --> second --> funcY --> third
 ```
 
-becomes:
+Example: cleaning user input will always return the same result.
 
-```java
-int index = 0;
-while(...) {
-    ...;
-    index++;
-    if (index <= 10) break;
-}
-```
+<!--
+We want to verify the behavior, we cannot assert that everything is always good.
+-->
+
 
 ---
 transition: slide-up
-layout: image-right
-image: ./assets/kill-em.jpeg
 ---
 
-# Dead mutant are good mutants
+## Invariant - Some things never change
 
-Our goal is to kill all the mutants.
+The new year's eve property contains two invariants: the month should be December and the day of the month the 31. 
 
-If a Unit Test fails, it means the code modification is detected: **the mutant is killed**.
+```mermaid {htmlLabels: false}
+flowchart LR
+    days["`
+    2012-12-31
+    2018-12-31
+    ????-12-31
+    \n
+    `"]
+    nye["isNewYearEve"]
+    days --> nye
+```
+<!--
+@IntRange(min = -999999999, max = 999999999)
 
-Else, the mutant survived, meaning it would not be detected if the case occurs in the real world.
-
-<br>
-
-**Mutation killing report provides you the Test Strength** (killed mutants / all mutants for which there was test coverage)
-
+Assume.that(anyDate.getMonthValue() == 12 && anyDate.getDayOfMonth() == 31);
+Assumptions.assumeThat(anyDate.getMonthValue() == 12 && anyDate.getDayOfMonth() == 31).isFalse();
+-->
 
 ---
-transition: fade
-layout: fact
+transition: slide-up
 ---
 
-# PiTest
+## Analogy
 
-A state-of-the-art mutation testing system for Java and the JVM
+Adding x to x is the same as x multiplied by two.
 
-<div class="abs-br m-6 flex gap-2">
-  <a href="http://pitest.org/" target="_blank" alt="PiTest.org"
-    class="text-xl slidev-icon-btn opacity-50 !border-none !hover:text-white">
-    <span> http://pitest.org/ </span>
-    <carbon-book />
-  </a>
-  <a href="https://github.com/hcoles/pitest" target="_blank" alt="PiTest"
-    class="text-xl slidev-icon-btn opacity-50 !border-none !hover:text-white">
-    <span> https://github.com/hcoles/pitest </span>
-    <carbon-logo-github />
-  </a>
+```mermaid
+flowchart LR
+    first["x"]
+    add["add(x,x)"]
+    result["y"]
+    multiply["multiply(x,2)"]
+    first --> add --> result
+    first --> multiply --> result
+```
+
+> It does not verify that both of these function are correctly implemented. It does verify that they behave consistently in this case.
+
+<div v-click class="text-xl p-2">
+
+A real life use case would be the refactoring of a function:
+
+```mermaid
+flowchart LR
+    first["x"]
+    add["refacto(x)"]
+    result["y"]
+    multiply["legacy(x)"]
+    first --> add --> result
+    first --> multiply --> result
+```
+
 </div>
 
 <!--
-It's a mutation testing system that helps us to automate the mutation testing and reporting
+@Property
+    public void shouldHaveSameResultInRefactorAndLegacy(@ForAll @Size(min = 1) List<Analogy.@From("generateUsers") User> users) {
+        System.out.println(users);
+        final double legacy = Analogy.averageAgeLegacy(users);
+        final double refactor = Analogy.averageAgeRefacto(users);
+        Assertions.assertThat(legacy).isEqualTo(refactor);
+    }
+
+    
+    @Provide
+    Arbitrary<Analogy.User> generateUsers() {
+        Arbitrary<String> names = Arbitraries.strings().withCharRange('a', 'z').ofMinLength(3).ofMaxLength(21);
+        Arbitrary<Integer> ages = Arbitraries.integers().between(1, 130);
+
+        return Builders.withBuilder(Analogy.User::new)
+               .use(names).inSetter(Analogy.User::setName)
+               .use(ages).inSetter(Analogy.User::setAge)
+               .build();
+    }
 -->
 
 ---
 transition: slide-up
 ---
 
-# Mutators
+## Symmetry - There and back again
 
-- ❓ **CONDITIONAL_BOUNDARIES** - replace relational operator `<, <=, >, >=`
-- 📭 **EMPTY_RETURNS** - replaces return values with an ‘empty’ value for that type (e.g. empty strings, empty Optionals, zero for integers)
-- ❌ **FALSE_RETURNS** - replaces primitive and boxed boolean return values with false
-- ✅ **TRUE_RETURNS** - replaces primitive and boxed boolean return values with true
-- 🕳️ **NULL_RETURNS** - replaces return values with null (unless annotated with NotNull or mutable by EMPTY_RETURNS)
-- ➕ **INCREMENTS** - replaces increments (++) with decrements (--) and vice versa
-- ➖ **INVERT_NEGS** - inverts negation of integer and floating point numbers (e.g. -1 to 1)
-- 🧮 **MATH** - replaces binary arithmetic operations with another operation (e.g. + to -)
-- ❗️ **NEGATIVE_CONDITIONALS** - negates conditionals (e.g. == to !=)
-- 0️⃣ **PRIMITIVE_RETURNS** - replaces primitive return values with 0 (unless they already return zero)
-- 🗑️ **VOID_METHOD_CALLS** - removes method calls to void methods
+Convert a value to another value and then convert it back to the original value.
 
-For the full list: https://pitest.org/quickstart/mutators/
+Serialization or encoding are a good example of this pattern.
 
-<!--
-Math: arithmetic operators, bitwise operators, shift operators 
--->
+A reversible function ensure you don't lose any information.
 
----
-transition: slide-up
----
-
-# Configuration
-
-```xml
- <plugin>
-  <groupId>org.pitest</groupId>
-  <artifactId>pitest-maven</artifactId>
-  <version>${pitest-parent.version}</version>
-  <configuration>
-    <targetClasses>
-      <param>io.ytvnr.*</param>
-    </targetClasses>
-    <targetTests>
-      <param>io.ytvnr.*</param>
-    </targetTests>
-  </configuration>
-  <dependencies>
-    <dependency>
-      <groupId>org.pitest</groupId>
-      <artifactId>pitest-junit5-plugin</artifactId>
-      <version>${pitest-junit5-plugin.version}</version>
-    </dependency>
-  </dependencies>
-</plugin>
+```mermaid
+flowchart LR
+    first["x"]
+    encode["encode(x)"]
+    result["y"]
+    decode["decode(y)"]
+    first --> encode --> result 
+    result --> decode --> first
 ```
 
-For more details: https://pitest.org/quickstart/maven/
+---
+transition: slide-up
+---
+
+# Exception reporting
+
+```java
+@Property
+	boolean absoluteValueOfAllNumbersIsPositive(@ForAll int anInteger) {
+       return Math.abs(anInteger) >= 0;
+       }
+
+@Property
+	void lengthOfConcatenatedStringIsGreaterThanLengthOfEach(
+@ForAll String string1, @ForAll String string2
+       ) {
+       String conc = string1 + string2;
+       Assertions.assertThat(conc.length()).isGreaterThan(string1.length());
+       Assertions.assertThat(conc.length()).isGreaterThan(string2.length());
+       }
+```
+
+
+<!--
+Absolute value:
+Integer in java are 32-bit number which are signed: half of the range is lower than 0 and the rest is greater or equal to 0.
+The failing value here is Integer.MIN_VALUE
+The Javadoc of Math.abs(int) says: "Note that if the argument is equal to the value of Integer.MIN_VALUE, the most negative representable int value, the result is that same value"
+
+Length of concatenated strings:
+The property does not take care of empty strings.
+-->
 
 ---
 transition: slide-up
-layout: image
-image: ./assets/kill-the-mutants.jpeg
 ---
 
+# Result Shrinking
 
+If a property can be falsified by a set of value, Jqwik will try to "shrink" the sample in order to find a smaller sample that also falsify the property.
 
-<!--
-let's try to seek and destroy the mutants
+```java
+@Property
+boolean stringShouldBeShrunkToAA(@ForAll @AlphaChars String aString) {
+    return aString.length() > 5 || aString.length() < 2;
+}
+```
 
-Show the classes we have, and the tests.
-Generate coverage with jacoco
-Generate coverage with PIT
--->
+```
+AssertionFailedError: Property [stringShouldBeShrunkToAA] falsified with sample {0="aa"}
 
----
-transition: fade-out
----
+tries = 38 
+checks = 38 
+...
+Shrunk Sample (5 steps)
+-------------------------
+  aString: "AA"
 
-# Interpreting the results
+Original Sample
+---------------
+  aString: "RzZ"
+```
 
-<img border="rounded" src="assets/pit-report.png">
+`AA` is the shortest failing string and `A` the lowest numeric value of allowed characters. 
 
----
-transition: fade-out
----
-
-# Interpreting the results
-
-<img border="rounded" src="assets/range-validator-report.png">
-
----
-transition: fade-out
----
-
-# Mutant states
-
-- 💗 **Survived** - The mutant survived the mutator. Test is not written well enough
-- 💀 **Killed** - Congratulations! 🎉
-- 👀 **No coverage** - Same as Survived, but there was no test exercising the mutated line of code
-- 💥 **Non viable** - Mutation that could not be loaded by the JVM as the bytecode is invalid. (PIT tries to minimize it)
-- ⌛️ **Timed out** - May happen if mutator changes the exit condition of loop, making it infinite
-- 🧠 **Memory error** - Might occur if a mutation increases the amount of memory used by the system.
-- 🏃 **Run error** - something went wrong when trying to test the mutation
-
-<!--
-For RangeValidatorTest
-
-first, just add assertions and run `task mutate`
-then, add case for 0 (false) and 100 (true)
-
-For Palindrome
-
-just add a case when it's not a palindrome
--->
-
----
-class: px-20
----
-
-# Pros and cons of Mutation Testing
-
-| **Pros**                                                      | **Cons**                                                                                       |
-|---------------------------------------------------------------|------------------------------------------------------------------------------------------------|
-| Cover entire source code and detects not well-tested parts    | Expensive and time-consuming process because mutant programs should be generated independently |
-| Detects high quality bugs, hard to find with usual testing    | Being complicated & long to perform, should be automated (thanks PiTest!)                      |
-| Reveals hidden faults in code such as source code ambiguities | Can't be used for black-box testing (needs to change source code)                              |
-| Customers get the most stable and reliable system             | Testers needs programming knowledge                                                            |
-| Loopholes in test can be identified                           | Needs some tuning: mutate high value code (not pojos)                                          |
-
+Shrinking can be disabled
 
 ---
 transition: fade
+---
+
+# Lifecycle methods
+
+- `@BeforeContainer` and `@AfterContainer`: equivalent to JUnit `@BeforeClass` and `@AfterClass`, run once before or after the container. An embedded container class can be annotated with `@Group`.
+- `@BeforeProperty` and `@AfterProperty`: equivalent to JUnit `@BeforeEach` and `@AfterEach`, run once before each property or example.
+- `@BeforeTry` and `@AfterTry`: runs before each try of a property. `@BeforeTry` can also be used on a class member to reset it before a try:
+
+```java
+class BeforeTryMemberExample {
+
+	@BeforeTry
+	int theAnswer = 42;
+
+	@Property
+	void theAnswerIsAlways42(@ForAll int addend) {
+		Assertions.assertThat(theAnswer).isEqualTo(42);
+		theAnswer += addend;
+	}
+}
+```
+
+---
+transition: slide-up
 ---
 
 # Summary
 
-- Mutation testing is time-consuming, it requires automation
-- Mutation testing is the most comprehensive technique to test any program
-- Mutation testing is a unit testing method
-- It uses fault injection to generate mutants
-- Other systems exists: µJava, Jester, Jumble, etc.
+- Short tests with a lot of inputs
+- Control over the injected data
+- Based on JUnit: just a lib to import and tests can coexist
+- Good complementarity with Unit tests to detects bugs from edge cases
+- Low effort to write tests
+- No dataset to maintain for testing, only providers to write once
+- Based on JUnit: you can use the same tooling to generate coverage reports
 
 ## To go further
 
-- [Don't let your code dry](http://blog.pitest.org/dont-let-your-code-dry/)
-- [PiTest PR setup](https://blog.pitest.org/pitest-pr-setup/)
+- [Jqwik User guide](https://jqwik.net/docs/current/user-guide.html)
 
 ---
 layout: image
@@ -420,4 +485,4 @@ image: ./assets/victory.jpeg
 <br>
 <br>
 
-[https://github.com/ytvnr/mutation-testing](https://github.com/ytvnr/mutation-testing)
+[https://github.com/ytvnr/property-based-testing](https://github.com/ytvnr/property-based-testing)
