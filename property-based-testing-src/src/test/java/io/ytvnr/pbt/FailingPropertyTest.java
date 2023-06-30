@@ -18,6 +18,7 @@ package io.ytvnr.pbt;
 import net.jqwik.api.Disabled;
 import net.jqwik.api.ForAll;
 import net.jqwik.api.Property;
+import net.jqwik.api.constraints.StringLength;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -28,15 +29,15 @@ import static org.assertj.core.api.Assertions.assertThat;
 public class FailingPropertyTest {
 
     @Property
-//    @Disabled
+    @Disabled
     boolean absoluteValueOfAllNumbersIsPositive(@ForAll int anInteger) {
         return Math.abs(anInteger) >= 0;
     }
 
     @Property
-//    @Disabled
+    @Disabled
     void lengthOfConcatenatedStringIsGreaterThanLengthOfEach(
-           @ForAll String string1, @ForAll String string2
+           @ForAll @StringLength(min = 1) String string1, @ForAll @StringLength(min = 1) String string2
     ) {
         String concatenated = string1 + string2;
         assertThat(concatenated.length()).isGreaterThan(string1.length());

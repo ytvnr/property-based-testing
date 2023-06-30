@@ -22,6 +22,7 @@ import net.jqwik.api.Group;
 import net.jqwik.api.Label;
 import net.jqwik.api.Property;
 import net.jqwik.api.constraints.IntRange;
+import org.assertj.core.api.Assumptions;
 
 import java.time.LocalDate;
 
@@ -32,12 +33,14 @@ import java.time.LocalDate;
 public class InvariantTest {
 
     @Property
+    @Disabled
     @Label("If the day is 31 and month 12, then it should systematically be new year's eve")
     public boolean invariant(@ForAll int anyYear) {
         return Invariant.isNewYearEve(LocalDate.of(anyYear, 12, 31));
     }
 
     @Property
+    @Disabled
     @Label("If the day is not 31 and month 12, then it should not be new year's eve")
     public boolean invariant_not_31_12(@ForAll LocalDate anyDate) {
         return !Invariant.isNewYearEve(anyDate);

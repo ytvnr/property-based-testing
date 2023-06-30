@@ -89,6 +89,7 @@ transition: fade-out
 | Fixed input    | Random Input              |
 | One execution  | Many executions           |
 | Assert result  | Assert result or behavior |
+| Example        | Property                  |
 
 
 <!--
@@ -232,7 +233,7 @@ transition: fade-out
 
 # Other properties to test
 
-Now, we also have to test a number divisible by 5 will end with "Buzz" and a number divisible by both 3 and 5 will be equal to "FizzBuzz"
+Now, we also have to test a number divisible by 5 will end with "Buzz" and a number divisible by both 3 and 5 will be equal to "io.ytvnr.pbt.FizzBuzz"
 
 ```java {all}
 @Property
@@ -242,7 +243,7 @@ boolean every_fifth_element_starts_with_Buzz(@ForAll("divisibleBy5") int i) {
 
 @Property
 boolean every_third_and_fifth_element_starts_with_Buzz(@ForAll("divisibleBy3And5") int i) {
-    return fizzBuzz().get(i - 1).equals("FizzBuzz");
+    return fizzBuzz().get(i - 1).equals("io.ytvnr.pbt.FizzBuzz");
 }
 
 @Provide

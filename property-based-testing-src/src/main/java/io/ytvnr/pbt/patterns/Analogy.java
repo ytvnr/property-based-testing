@@ -46,6 +46,5 @@ public class Analogy {
     public static class User {
         private String name;
         private int age;
-
     }
 }
