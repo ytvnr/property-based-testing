@@ -31,7 +31,7 @@ public class IdempotenceTest {
     @Property
     public void idempotence(@ForAll List<String> anyStrings) {
         final List<String> result1 = Idempotence.sort(anyStrings);
-        final List<String> result2 = Idempotence.sort(anyStrings);
+        final List<String> result2 = Idempotence.sort(result1);
 
         assertThat(result1).isEqualTo(result2);
     }

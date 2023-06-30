@@ -21,13 +21,17 @@ import java.util.List;
 class AnalogyTest {
 
     @Property
-    @Disabled
     public void shouldHaveSameResultInRefactorAndLegacy(@ForAll @Size(min = 1) List<Analogy.User> users) {
         System.out.println(users);
         final double legacy = Analogy.averageAgeLegacy(users);
         final double refactor = Analogy.averageAgeRefacto(users);
         Assertions.assertThat(legacy).isEqualTo(refactor);
     }
+
+
+
+
+
 
 
 

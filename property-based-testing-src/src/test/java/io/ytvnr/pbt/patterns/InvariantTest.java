@@ -33,14 +33,11 @@ public class InvariantTest {
 
     @Property
     @Label("If the day is 31 and month 12, then it should systematically be new year's eve")
-    @Disabled
     public boolean invariant(@ForAll int anyYear) {
         return Invariant.isNewYearEve(LocalDate.of(anyYear, 12, 31));
     }
 
     @Property
-    @Disabled
-//    @Property(tries = 10000, afterFailure = AfterFailureMode.RANDOM_SEED, generation = GenerationMode.RANDOMIZED)
     @Label("If the day is not 31 and month 12, then it should not be new year's eve")
     public boolean invariant_not_31_12(@ForAll LocalDate anyDate) {
         return !Invariant.isNewYearEve(anyDate);
@@ -61,6 +58,7 @@ public class InvariantTest {
         }
 
         @Property
+//    @Property(tries = 10000, afterFailure = AfterFailureMode.RANDOM_SEED, generation = GenerationMode.RANDOMIZED)
         @Label("If the day is not 31 and month 12, then it should not be new year's eve")
         public boolean invariant_not_31_12(@ForAll LocalDate anyDate) {
             Assume.that(!(anyDate.getMonthValue() == 12 && anyDate.getDayOfMonth() == 31));

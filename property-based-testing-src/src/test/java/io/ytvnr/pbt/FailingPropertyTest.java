@@ -28,13 +28,13 @@ import static org.assertj.core.api.Assertions.assertThat;
 public class FailingPropertyTest {
 
     @Property
-    @Disabled
+//    @Disabled
     boolean absoluteValueOfAllNumbersIsPositive(@ForAll int anInteger) {
         return Math.abs(anInteger) >= 0;
     }
 
     @Property
-    @Disabled
+//    @Disabled
     void lengthOfConcatenatedStringIsGreaterThanLengthOfEach(
            @ForAll String string1, @ForAll String string2
     ) {

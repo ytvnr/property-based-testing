@@ -24,7 +24,7 @@ drawings:
 transition: slide-left
 # use UnoCSS
 css: unocss
-#background: ./assets/xmen.jpeg
+background: ./assets/intro.jpeg
 ---
 
 # Introduction to Property-Based Testing
@@ -54,13 +54,20 @@ transition: fade-out
 
 # What is Property-Based Testing
 
-PBT tries to combine the intuitiveness of Microtests with the effectiveness of randomized, generated test data.
+Checks that a function verifies a property.
 
-Microtest is a small test that test small code.
+Most of the time, properties are expressed humanly, and they do not have to dig into too much details about the input.
+
+What you want to check is useful characteristics that must be seen in the output.
+
+```
+for all (a, b, c) strings
+the concatenation of a, b and c is never shorter than a
+```
 
 Historically, PBT is "The thing that Quickcheck does". Quickcheck is a combinator library originally written in Haskell designed to generate test cases for tests suites. It has been adapted to other languages later.
 
-In Quickcheck, we write assertions logical **properties** that function should fulfill. Then, Quickcheck tries to generate a test case that falsifies such assertions, one a case is found, quickcheck reduces to the minimal failing subset, enabling the developer to fix its function. 
+In Quickcheck, we write assertions for logical **properties** that function should fulfill. Then, Quickcheck tries to generate a test case that falsifies such assertions, once a case is found, quickcheck reduces to the minimal failing subset, enabling the developer to fix its function. 
 
 <!--
 A unit test tests a code unit (method, class, or small set of classes).
@@ -74,6 +81,9 @@ transition: fade-out
 
 # Unit-test vs Property-Based-test
 
+<br>
+<br>
+
 | **Unit tests** | **Property-based tests**  |
 |----------------|---------------------------|
 | Fixed input    | Random Input              |
@@ -81,6 +91,15 @@ transition: fade-out
 | Assert result  | Assert result or behavior |
 
 
+<!--
+A unit test tests a code unit (method, class, or small set of classes).
+
+Unit test, as UI tests or QA tests are example based, meaning we only test a fixed set of data. Each test is an example.
+-->
+
+---
+transition: fade-out
+---
 
 # Which library will we use ?
 
@@ -103,11 +122,17 @@ transition: fade-out
 # Creating a property
 
 You just create a method with `public`, `protected` or package-scoped visbility, and you annotate it with `@Property`.
-A property is supposed to have one or more parameters, each annotated with `@ForALl`. Those parameters will be filled by Jqwik at runtime.
+A property is supposed to have one or more parameters, each annotated with `@ForAll`. Those parameters will be filled by Jqwik at runtime.
 
 A property method has to:
 - either return a `boolean` that signifies success or failure for this property
 - or return nothing (`void`). In that case, you have to use assertions to check property's invariant.
+
+---
+transition: fade-out
+---
+
+# Configuring a property
 
 `@Property` has a lot of attributes that can be configured to customize your test:
 - `int tries`: the number of times jqwik tries to generate parameter values for this method. Default is `1000`.
@@ -121,6 +146,8 @@ A property method has to:
 
 <!--
 Works with any assertion library (JUnit, Hamcrest, AssertJ).
+
+You can also configure the random numeric distribution to influence the probability distribution of randomly generated numbers
 -->
 
 ---
@@ -134,10 +161,10 @@ _A property is supposed to describe a generic invariant or post condition of you
 Let's play with the [Fizz Buzz Kata](http://codingdojo.org/kata/FizzBuzz/).
 
 Iterating over numbers from 1 to 100,
-- If the number is divisible by 3, then return "Fizz"
-- If the number is divisible by 5, then return "Buzz"
-- If the number is divisible by both 3 and 5, then return "FizzBuzz"
-- Else, return the number
+- If the number is divisible by 3, then returns "Fizz"
+- If the number is divisible by 5, then returns "Buzz"
+- If the number is divisible by both 3 and 5, then returns "FizzBuzz"
+- Else, returns the number
 
 ---
 transition: fade-out
@@ -162,6 +189,10 @@ List<String> fizzBuzz() {
 <br>
 <br>
 <br>
+<br>
+<br>
+<br>
+
 > This function generates a list of a 100 elements matching the requirements of the Fizz Buzz Kata.
 
 ---
@@ -170,18 +201,10 @@ transition: fade-out
 
 # A property from Fizz Buzz Kata
 
-A property that can be extracted and tested from this function is: "Every multiple of 3 element starts with 'Fizz'".
+A property that can be extracted and tested from this function is: "**Every multiple of 3 element starts with 'Fizz'**".
 
-First, we will create a _Precondition_ through `@Provide` of Jqwik library: "Consider number between 1 and 100 that are divisble by 3"
 
-```java {all}
-@Provide
-Arbitrary<Integer> divisibleBy3() {
-    return Arbitraries.integers().between(1, 100).filter(i -> i % 3 == 0);
-}
-```
-
-Then, use it in your `@Property` and define the _PostCondition_: "The string returned by `fizzBuzz()` starts with `Fizz`" 
+First, create the property with  `@Property` and define the _PostCondition_: "The string returned by `fizzBuzz()` starts with `Fizz`"
 
 ```java {all}
 @Property
@@ -190,8 +213,21 @@ boolean every_third_element_starts_with_Fizz(@ForAll("divisibleBy3") int i) {
 }
 ```
 
+<div v-click class="text-xl p-2">
+
+We will create a _Precondition_ thanks to `@Provide`: "Consider number between 1 and 100 that are divisble by 3"
+
+```java {all}
+@Provide
+Arbitrary<Integer> divisibleBy3() {
+    return Arbitraries.integers().between(1, 100).filter(i -> i % 3 == 0);
+}
+```
+
+</div>
+
 ---
-transition: slide-up
+transition: fade-out
 ---
 
 # Other properties to test
@@ -200,24 +236,24 @@ Now, we also have to test a number divisible by 5 will end with "Buzz" and a num
 
 ```java {all}
 @Property
-    boolean every_fifth_element_starts_with_Buzz(@ForAll("divisibleBy5") int i) {
-        return fizzBuzz().get(i - 1).endsWith("Buzz");
-    }
+boolean every_fifth_element_starts_with_Buzz(@ForAll("divisibleBy5") int i) {
+    return fizzBuzz().get(i - 1).endsWith("Buzz");
+}
 
-    @Property
-    boolean every_third_and_fifth_element_starts_with_Buzz(@ForAll("divisibleBy3And5") int i) {
-        return fizzBuzz().get(i - 1).equals("FizzBuzz");
-    }
-
-@Provide
-    Arbitrary<Integer> divisibleBy5() {
-       return Arbitraries.integers().between(1, 100).filter(i -> i % 5 == 0);
-       }
+@Property
+boolean every_third_and_fifth_element_starts_with_Buzz(@ForAll("divisibleBy3And5") int i) {
+    return fizzBuzz().get(i - 1).equals("FizzBuzz");
+}
 
 @Provide
-    Arbitrary<Integer> divisibleBy3And5() {
-       return Arbitraries.integers().between(1, 100).filter(i -> i % 5 == 0 && i % 3 == 0);
-       }
+Arbitrary<Integer> divisibleBy5() {
+    return Arbitraries.integers().between(1, 100).filter(i -> i % 5 == 0);
+}
+
+@Provide
+Arbitrary<Integer> divisibleBy3And5() {
+    return Arbitraries.integers().between(1, 100).filter(i -> i % 5 == 0 && i % 3 == 0);
+}
 ```
 ---
 transition: slide-up
@@ -230,6 +266,9 @@ https://blog.ssanj.net/posts/2016-06-26-property-based-testing-patterns.html
 
 ## Idempotence - The more things change, the more they stay the same
 
+<br>
+<br>
+
 ```mermaid
 flowchart LR
     first["x"]
@@ -240,10 +279,23 @@ flowchart LR
     first --> funcX --> second --> funcY --> third
 ```
 
-Example: cleaning user input will always return the same result.
+<br>
+<br>
+<br>
+<br>
+<br>
+<br>
+<br>
+<br>
+<br>
+<br>
+
+> Example: cleaning user input must always return the same result
 
 <!--
 We want to verify the behavior, we cannot assert that everything is always good.
+
+Let's see an example with the sorting of a list
 -->
 
 
@@ -253,7 +305,10 @@ transition: slide-up
 
 ## Invariant - Some things never change
 
-The new year's eve property contains two invariants: the month should be December and the day of the month the 31. 
+The New Year's Eve property contains two invariants: the month should be December and the day of the month the 31.
+
+<br>
+<br>
 
 ```mermaid {htmlLabels: false}
 flowchart LR
@@ -267,7 +322,11 @@ flowchart LR
     days --> nye
 ```
 <!--
+First test: add this constraint
+
 @IntRange(min = -999999999, max = 999999999)
+
+Second test: add an assumption to filter data
 
 Assume.that(anyDate.getMonthValue() == 12 && anyDate.getDayOfMonth() == 31);
 Assumptions.assumeThat(anyDate.getMonthValue() == 12 && anyDate.getDayOfMonth() == 31).isFalse();
@@ -291,7 +350,7 @@ flowchart LR
     first --> multiply --> result
 ```
 
-> It does not verify that both of these function are correctly implemented. It does verify that they behave consistently in this case.
+> ⚠️ It does not verify that both of these function are correctly implemented. It does verify that they behave consistently in this case.
 
 <div v-click class="text-xl p-2">
 
@@ -310,7 +369,9 @@ flowchart LR
 </div>
 
 <!--
-@Property
+
+    @Property
+
     public void shouldHaveSameResultInRefactorAndLegacy(@ForAll @Size(min = 1) List<Analogy.@From("generateUsers") User> users) {
         System.out.println(users);
         final double legacy = Analogy.averageAgeLegacy(users);
@@ -341,7 +402,10 @@ Convert a value to another value and then convert it back to the original value.
 
 Serialization or encoding are a good example of this pattern.
 
-A reversible function ensure you don't lose any information.
+A reversible function ensures you don't lose any information.
+
+<br>
+<br>
 
 ```mermaid
 flowchart LR
@@ -353,6 +417,12 @@ flowchart LR
     result --> decode --> first
 ```
 
+<!--
+
+See the annotated generation or class supplier
+
+-->
+
 ---
 transition: slide-up
 ---
@@ -361,29 +431,31 @@ transition: slide-up
 
 ```java
 @Property
-	boolean absoluteValueOfAllNumbersIsPositive(@ForAll int anInteger) {
-       return Math.abs(anInteger) >= 0;
-       }
+boolean absoluteValueOfAllNumbersIsPositive(@ForAll int anInteger) {
+   return Math.abs(anInteger) >= 0;
+}
 
 @Property
-	void lengthOfConcatenatedStringIsGreaterThanLengthOfEach(
-@ForAll String string1, @ForAll String string2
-       ) {
-       String conc = string1 + string2;
-       Assertions.assertThat(conc.length()).isGreaterThan(string1.length());
-       Assertions.assertThat(conc.length()).isGreaterThan(string2.length());
-       }
+void lengthOfConcatenatedStringIsGreaterThanLengthOfEach(@ForAll String string1, @ForAll String string2) {
+   String conc = string1 + string2;
+   Assertions.assertThat(conc.length()).isGreaterThan(string1.length());
+   Assertions.assertThat(conc.length()).isGreaterThan(string2.length());
+}
 ```
 
 
 <!--
-Absolute value:
+**Absolute value:**
+
 Integer in java are 32-bit number which are signed: half of the range is lower than 0 and the rest is greater or equal to 0.
 The failing value here is Integer.MIN_VALUE
 The Javadoc of Math.abs(int) says: "Note that if the argument is equal to the value of Integer.MIN_VALUE, the most negative representable int value, the result is that same value"
 
-Length of concatenated strings:
+**Length of concatenated strings:**
+
 The property does not take care of empty strings.
+
+@StringLength(min = 1)
 -->
 
 ---
@@ -446,17 +518,20 @@ class BeforeTryMemberExample {
 
 ---
 transition: slide-up
+layout: image-right
+image: ./assets/property-testing.png
 ---
 
 # Summary
 
 - Short tests with a lot of inputs
 - Control over the injected data
-- Based on JUnit: just a lib to import and tests can coexist
-- Good complementarity with Unit tests to detects bugs from edge cases
+- Good complementarity to Unit tests to detects bugs from edge cases
 - Low effort to write tests
 - No dataset to maintain for testing, only providers to write once
-- Based on JUnit: you can use the same tooling to generate coverage reports
+- Based on JUnit: 
+  - just a lib to import and tests can coexist
+  - you can use the same tooling to generate coverage reports
 
 ## To go further
 

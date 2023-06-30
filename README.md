@@ -12,10 +12,6 @@ cd ./property-based-testing-src
 
 We will use Jqwik Library that comes with a cool [User Guide](https://jqwik.net/docs/current/user-guide.html).
 
-A https://taskfile.dev/ is provided to quickly generate:
-
-[//]: (# TODO)
-
 ## Slides
 
 Uses https://sli.dev/guide/install.html#starter-template.
